@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Muse - 灵感记录便签</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="logo">Muse</h1>
+      <p class="tagline">捕捉每一个灵感瞬间</p>
+    </header>
+
+    <div class="input-area">
+      <textarea id="noteInput" placeholder="写下你的灵感..." rows="3"></textarea>
+      <div class="input-footer">
+        <span class="char-count" id="charCount">0 / 500</span>
+        <button id="addBtn" class="btn btn-primary">记录灵感</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="搜索便签..." class="search-input">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">全部</button>
+        <button class="filter-tab" data-filter="today">今日</button>
+        <button class="filter-tab" data-filter="week">本周</button>
+      </div>
+    </div>
+
+    <div class="notes-container" id="notesContainer">
+      <div class="empty-state">
+        <div class="empty-icon">💡</div>
+        <p>还没有灵感记录，开始写下第一条吧</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
