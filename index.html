@@ -7,8 +7,63 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
+  <!-- ========== 登录 / 注册页 ========== -->
+  <div class="auth-page" id="authPage">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-logo">Muse</h1>
+        <p class="auth-tagline">捕捉每一个灵感瞬间</p>
+      </div>
+
+      <!-- 登录表单 -->
+      <form class="auth-form" id="loginForm">
+        <h2 class="auth-title">登录</h2>
+        <div class="form-group">
+          <label for="loginUsername">用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password" required>
+        </div>
+        <p class="auth-error" id="loginError"></p>
+        <button type="submit" class="btn btn-primary btn-block">登录</button>
+        <p class="auth-switch">
+          还没有账号？<a href="#" id="showRegister">立即注册</a>
+        </p>
+      </form>
+
+      <!-- 注册表单 -->
+      <form class="auth-form hidden" id="registerForm">
+        <h2 class="auth-title">注册</h2>
+        <div class="form-group">
+          <label for="registerUsername">用户名</label>
+          <input type="text" id="registerUsername" placeholder="2-50 个字符" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">密码</label>
+          <input type="password" id="registerPassword" placeholder="至少 6 个字符" autocomplete="new-password" required>
+        </div>
+        <div class="form-group">
+          <label for="registerConfirm">确认密码</label>
+          <input type="password" id="registerConfirm" placeholder="再次输入密码" autocomplete="new-password" required>
+        </div>
+        <p class="auth-error" id="registerError"></p>
+        <button type="submit" class="btn btn-primary btn-block">注册</button>
+        <p class="auth-switch">
+          已有账号？<a href="#" id="showLogin">返回登录</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== 便签主界面 ========== -->
+  <div class="app hidden" id="appPage">
     <header class="header">
+      <div class="user-bar">
+        <span class="user-greeting" id="userGreeting"></span>
+        <button class="btn btn-text" id="logoutBtn">退出登录</button>
+      </div>
       <h1 class="logo">Muse</h1>
       <p class="tagline">捕捉每一个灵感瞬间</p>
     </header>
