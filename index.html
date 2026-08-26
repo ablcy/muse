@@ -70,45 +70,57 @@
             .main-layout{height:calc(100dvh - 48px)}
         }
 
-        /* === 笔记功能 CSS === */
-        .notes-panel{position:fixed;top:0;right:0;width:100%;max-width:900px;height:100dvh;background:#fff;z-index:200;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .3s ease}
-        .notes-panel.open{transform:translateX(0)}
-        .notes-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:199;display:none}
-        .notes-overlay.show{display:block}
-        .notes-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;background:#fafafa}
-        .notes-header h2{font-size:18px;font-weight:600;color:#333}
-        .notes-header-actions{display:flex;gap:8px}
-        .notes-btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;transition:all .2s;font-family:inherit}
-        .notes-btn-primary{background:#3498db;color:#fff}
-        .notes-btn-primary:hover{background:#2980b9}
-        .notes-btn-ghost{background:transparent;color:#666;border:1px solid #ddd}
-        .notes-btn-ghost:hover{background:#f5f5f5}
-        .notes-btn-danger{background:transparent;color:#e74c3c;border:1px solid #f5c6cb}
-        .notes-btn-danger:hover{background:#fdf0ef}
-        .notes-body{flex:1;display:flex;overflow:hidden}
-        .notes-list{width:280px;min-width:280px;border-right:1px solid #eee;overflow-y:auto;background:#fafafa}
-        .notes-list-item{padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s;position:relative}
-        .notes-list-item:hover{background:#f0f7ff}
-        .notes-list-item.active{background:#e8f4fd;border-left:3px solid #3498db}
-        .notes-list-title{font-size:14px;font-weight:600;color:#333;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .notes-list-title.empty{color:#999;font-weight:400}
-        .notes-list-preview{font-size:12px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
-        .notes-list-time{font-size:11px;color:#bbb}
-        .notes-list-delete{position:absolute;top:10px;right:10px;width:24px;height:24px;border:none;background:transparent;color:#ccc;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .15s}
-        .notes-list-item:hover .notes-list-delete{opacity:1}
-        .notes-list-delete:hover{background:#fdf0ef;color:#e74c3c}
-        .notes-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#bbb;padding:40px;text-align:center}
-        .notes-empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
-        .notes-empty-text{font-size:14px;margin-bottom:16px}
-        .notes-editor{flex:1;display:flex;flex-direction:column;overflow:hidden}
-        .notes-editor-title{padding:16px 24px 8px;border:none;outline:none;font-size:22px;font-weight:600;color:#333;font-family:inherit;width:100%}
-        .notes-editor-title::placeholder{color:#ccc}
-        .notes-editor-content{flex:1;padding:8px 24px 24px;border:none;outline:none;font-size:15px;line-height:1.8;color:#444;font-family:inherit;resize:none;width:100%}
-        .notes-editor-content::placeholder{color:#ddd}
-        .notes-save-status{padding:6px 24px;font-size:12px;color:#999;border-top:1px solid #f5f5f5;background:#fafafa}
-        .notes-save-status.saving{color:#f39c12}
-        .notes-save-status.saved{color:#27ae60}
-        @media(max-width:768px){.notes-list{width:200px;min-width:200px}.notes-editor-title{font-size:18px}.notes-editor-content{font-size:14px}}
+
+        /* === 笔记模态框 CSS === */
+        .note-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+        .note-modal-overlay.show{display:flex}
+        .note-modal{background:#fff;border-radius:12px;width:100%;max-width:600px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.2);overflow:hidden}
+        .note-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;background:#fafafa}
+        .note-modal-header h3{font-size:17px;font-weight:600;color:#333;margin:0}
+        .note-modal-close{width:32px;height:32px;border:none;background:transparent;color:#999;font-size:22px;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .note-modal-close:hover{background:#f0f0f0;color:#333}
+        .note-modal-body{flex:1;display:flex;flex-direction:column;padding:20px;overflow-y:auto}
+        .note-modal-title-input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:16px;font-weight:600;color:#333;outline:none;margin-bottom:12px;font-family:inherit;transition:border-color .2s}
+        .note-modal-title-input:focus{border-color:#3498db;box-shadow:0 0 0 3px rgba(52,152,219,.1)}
+        .note-modal-title-input::placeholder{color:#ccc;font-weight:400}
+        .note-modal-content-textarea{width:100%;flex:1;min-height:200px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;line-height:1.7;color:#444;outline:none;resize:vertical;font-family:inherit;transition:border-color .2s}
+        .note-modal-content-textarea:focus{border-color:#3498db;box-shadow:0 0 0 3px rgba(52,152,219,.1)}
+        .note-modal-content-textarea::placeholder{color:#ddd}
+        .note-modal-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #eee;background:#fafafa;gap:10px}
+        .note-modal-status{font-size:12px;color:#999;flex:1}
+        .note-modal-status.saving{color:#f39c12}
+        .note-modal-status.saved{color:#27ae60}
+        .note-modal-actions{display:flex;gap:8px}
+        .note-modal-btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;font-family:inherit}
+        .note-modal-btn-primary{background:#3498db;color:#fff}
+        .note-modal-btn-primary:hover{background:#2980b9}
+        .note-modal-btn-ghost{background:#fff;color:#666;border:1px solid #ddd}
+        .note-modal-btn-ghost:hover{background:#f5f5f5}
+        .note-modal-btn-danger{background:#fff;color:#e74c3c;border:1px solid #f5c6cb}
+        .note-modal-btn-danger:hover{background:#fdf0ef}
+        /* 笔记列表弹窗 */
+        .note-list-modal{max-width:500px}
+        .note-list-item{padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:space-between}
+        .note-list-item:hover{background:#f8f9fa}
+        .note-list-item-info{flex:1;min-width:0}
+        .note-list-item-title{font-size:14px;font-weight:600;color:#333;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .note-list-item-title.empty{color:#999;font-weight:400}
+        .note-list-item-preview{font-size:12px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .note-list-item-time{font-size:11px;color:#bbb;margin-top:3px}
+        .note-list-item-delete{width:28px;height:28px;border:none;background:transparent;color:#ccc;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;transition:all .15s}
+        .note-list-item-delete:hover{background:#fdf0ef;color:#e74c3c}
+        .note-list-empty{padding:40px 20px;text-align:center;color:#bbb}
+        .note-list-empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+        .note-list-empty-text{font-size:14px}
+        @media(max-width:768px){
+            .note-modal-overlay{padding:0}
+            .note-modal{max-width:100%;max-height:100vh;height:100%;border-radius:0}
+            .note-modal-header{padding:14px 16px}
+            .note-modal-body{padding:16px}
+            .note-modal-footer{padding:10px 16px}
+            .note-modal-title-input{font-size:15px}
+            .note-modal-content-textarea{font-size:13px;min-height:150px}
+        }
     </style>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -934,31 +946,47 @@
 
     <script defer src="app.js"></script>
 
-    <!-- 笔记面板 -->
-    <div class="notes-overlay" id="notes-overlay"></div>
-    <div class="notes-panel" id="notes-panel">
-        <div class="notes-header">
-            <h2>📝 我的笔记</h2>
-            <div class="notes-header-actions">
-                <button class="notes-btn notes-btn-primary" id="notes-new-btn">+ 新建笔记</button>
-                <button class="notes-btn notes-btn-ghost" id="notes-close-btn">关闭</button>
+
+    <!-- 笔记编辑器模态框 -->
+    <div class="note-modal-overlay" id="note-editor-overlay">
+        <div class="note-modal" id="note-editor-modal">
+            <div class="note-modal-header">
+                <h3 id="note-editor-title">新建笔记</h3>
+                <button class="note-modal-close" id="note-editor-close">&times;</button>
             </div>
-        </div>
-        <div class="notes-body">
-            <div class="notes-list" id="notes-list">
-                <div class="notes-empty">
-                    <div class="notes-empty-icon">📋</div>
-                    <div class="notes-empty-text">暂无笔记<br>点击"新建笔记"开始记录</div>
+            <div class="note-modal-body">
+                <input type="text" class="note-modal-title-input" id="note-title-input" placeholder="笔记标题（可选）">
+                <textarea class="note-modal-content-textarea" id="note-content-textarea" placeholder="开始记录你的想法...&#10;&#10;支持纯文本编辑，自动保存到云端"></textarea>
+            </div>
+            <div class="note-modal-footer">
+                <div class="note-modal-status" id="note-save-status">未保存</div>
+                <div class="note-modal-actions">
+                    <button class="note-modal-btn note-modal-btn-danger" id="note-delete-btn" style="display:none">删除</button>
+                    <button class="note-modal-btn note-modal-btn-ghost" id="note-cancel-btn">取消</button>
+                    <button class="note-modal-btn note-modal-btn-primary" id="note-save-btn">保存</button>
                 </div>
             </div>
-            <div class="notes-editor" id="notes-editor" style="display:none">
-                <input type="text" class="notes-editor-title" id="notes-editor-title" placeholder="笔记标题...">
-                <textarea class="notes-editor-content" id="notes-editor-content" placeholder="开始记录你的想法...&#10;&#10;支持纯文本编辑，自动保存到云端"></textarea>
-                <div class="notes-save-status" id="notes-save-status">未保存</div>
+        </div>
+    </div>
+
+    <!-- 笔记列表模态框 -->
+    <div class="note-modal-overlay" id="note-list-overlay">
+        <div class="note-modal note-list-modal" id="note-list-modal">
+            <div class="note-modal-header">
+                <h3>我的笔记</h3>
+                <button class="note-modal-close" id="note-list-close">&times;</button>
             </div>
-            <div class="notes-empty" id="notes-editor-empty" style="flex:1;background:#fff">
-                <div class="notes-empty-icon">✏️</div>
-                <div class="notes-empty-text">选择一篇笔记开始编辑<br>或点击"新建笔记"创建</div>
+            <div class="note-modal-body" id="note-list-body" style="padding:0">
+                <div class="note-list-empty">
+                    <div class="note-list-empty-icon">📋</div>
+                    <div class="note-list-empty-text">暂无笔记<br>点击"新建笔记"开始记录</div>
+                </div>
+            </div>
+            <div class="note-modal-footer">
+                <div class="note-modal-status" id="note-list-count">0 篇笔记</div>
+                <div class="note-modal-actions">
+                    <button class="note-modal-btn note-modal-btn-primary" id="note-list-new-btn">+ 新建笔记</button>
+                </div>
             </div>
         </div>
     </div>
