@@ -3474,7 +3474,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const found = findInTree(activeTree, selectedFolder);
 
         if (found) {
-            found.array.splice(found.index + 1, 0, newFolder);
+            // 加到同一层级的最下方
+            found.array.push(newFolder);
         } else {
             // fallback: 加到根级末尾
             activeTree.push(newFolder);
