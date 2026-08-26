@@ -3455,49 +3455,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        // 找 selectedFolder 所在的父级数组
+        // 递归查找 selectedFolder 所在的数组和索引（通过 name + dateAdded 匹配，避免对象引用问题）
 
-        function findParentArray(items, target) {
-
-            for (const item of items) {
-
-                if (item.type === 'folder' && item.children) {
-
-                    if (item.children.includes(target)) return item.children;
-
-                    const found = findParentArray(item.children, target);
-
-                    if (found) return found;
-
+        function findInTree(items, target) {
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].name === target.name && items[i].dateAdded === target.dateAdded && items[i].type === target.type) {
+                    return { array: items, index: i };
                 }
-
+                if (items[i].type === 'folder' && items[i].children) {
+                    const found = findInTree(items[i].children, target);
+                    if (found) return found;
+                }
             }
-
             return null;
-
         }
 
-
-
         const activeTree = getActiveTree();
-        const parentArray = findParentArray(activeTree, selectedFolder)
+        const found = findInTree(activeTree, selectedFolder);
 
-            || (activeTree.includes(selectedFolder) ? activeTree : null);
-
-
-
-        if (parentArray) {
-
-            const idx = parentArray.indexOf(selectedFolder);
-
-            parentArray.splice(idx + 1, 0, newFolder);
-
+        if (found) {
+            found.array.splice(found.index + 1, 0, newFolder);
         } else {
-
-            // fallback: 加到根级
-
+            // fallback: 加到根级末尾
             activeTree.push(newFolder);
-
         }
 
 
