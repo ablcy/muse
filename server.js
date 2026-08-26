@@ -140,7 +140,16 @@ async function initDatabase() {
                 )
             `);
             console.log('Notes table created or already exists');
-            
+
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS note_trees (
+                    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                    data JSONB NOT NULL DEFAULT '[]',
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            console.log('Note trees table created or already exists');
+
             console.log('Database tables initialized successfully');
             return true;
         } catch (err) {
@@ -1189,6 +1198,43 @@ app.delete('/api/notes/:id', async (req, res) => {
     } catch (err) {
         console.error('Delete note error:', err);
         res.status(500).json({ error: '删除笔记失败' });
+    }
+});
+
+// ==================== 笔记树 API ====================
+
+// 获取笔记树
+app.get('/api/get-note-tree/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query('SELECT data FROM note_trees WHERE user_id = $1', [userId]);
+        let data = [];
+        if (result.rows.length > 0 && result.rows[0].data) {
+            data = typeof result.rows[0].data === 'string' ? JSON.parse(result.rows[0].data) : result.rows[0].data;
+        }
+        res.json({ success: true, noteTree: data });
+    } catch (err) {
+        console.error('Get note tree error:', err);
+        res.status(500).json({ error: '获取笔记树失败' });
+    }
+});
+
+// 保存笔记树
+app.post('/api/save-note-tree', async (req, res) => {
+    const { userId, noteTree } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: '用户ID不能为空' });
+    }
+    try {
+        await pool.query(
+            `INSERT INTO note_trees (user_id, data) VALUES ($1, $2)
+             ON CONFLICT (user_id) DO UPDATE SET data = $2, updated_at = CURRENT_TIMESTAMP`,
+            [userId, JSON.stringify(noteTree || [])]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Save note tree error:', err);
+        res.status(500).json({ error: '保存笔记树失败' });
     }
 });
 
