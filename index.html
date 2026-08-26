@@ -69,6 +69,46 @@
             .sidebar{display:none;width:0;min-width:0}
             .main-layout{height:calc(100dvh - 48px)}
         }
+
+        /* === 笔记功能 CSS === */
+        .notes-panel{position:fixed;top:0;right:0;width:100%;max-width:900px;height:100dvh;background:#fff;z-index:200;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .3s ease}
+        .notes-panel.open{transform:translateX(0)}
+        .notes-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.3);z-index:199;display:none}
+        .notes-overlay.show{display:block}
+        .notes-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee;background:#fafafa}
+        .notes-header h2{font-size:18px;font-weight:600;color:#333}
+        .notes-header-actions{display:flex;gap:8px}
+        .notes-btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;transition:all .2s;font-family:inherit}
+        .notes-btn-primary{background:#3498db;color:#fff}
+        .notes-btn-primary:hover{background:#2980b9}
+        .notes-btn-ghost{background:transparent;color:#666;border:1px solid #ddd}
+        .notes-btn-ghost:hover{background:#f5f5f5}
+        .notes-btn-danger{background:transparent;color:#e74c3c;border:1px solid #f5c6cb}
+        .notes-btn-danger:hover{background:#fdf0ef}
+        .notes-body{flex:1;display:flex;overflow:hidden}
+        .notes-list{width:280px;min-width:280px;border-right:1px solid #eee;overflow-y:auto;background:#fafafa}
+        .notes-list-item{padding:14px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s;position:relative}
+        .notes-list-item:hover{background:#f0f7ff}
+        .notes-list-item.active{background:#e8f4fd;border-left:3px solid #3498db}
+        .notes-list-title{font-size:14px;font-weight:600;color:#333;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .notes-list-title.empty{color:#999;font-weight:400}
+        .notes-list-preview{font-size:12px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+        .notes-list-time{font-size:11px;color:#bbb}
+        .notes-list-delete{position:absolute;top:10px;right:10px;width:24px;height:24px;border:none;background:transparent;color:#ccc;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .15s}
+        .notes-list-item:hover .notes-list-delete{opacity:1}
+        .notes-list-delete:hover{background:#fdf0ef;color:#e74c3c}
+        .notes-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#bbb;padding:40px;text-align:center}
+        .notes-empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+        .notes-empty-text{font-size:14px;margin-bottom:16px}
+        .notes-editor{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .notes-editor-title{padding:16px 24px 8px;border:none;outline:none;font-size:22px;font-weight:600;color:#333;font-family:inherit;width:100%}
+        .notes-editor-title::placeholder{color:#ccc}
+        .notes-editor-content{flex:1;padding:8px 24px 24px;border:none;outline:none;font-size:15px;line-height:1.8;color:#444;font-family:inherit;resize:none;width:100%}
+        .notes-editor-content::placeholder{color:#ddd}
+        .notes-save-status{padding:6px 24px;font-size:12px;color:#999;border-top:1px solid #f5f5f5;background:#fafafa}
+        .notes-save-status.saving{color:#f39c12}
+        .notes-save-status.saved{color:#27ae60}
+        @media(max-width:768px){.notes-list{width:200px;min-width:200px}.notes-editor-title{font-size:18px}.notes-editor-content{font-size:14px}}
     </style>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -100,7 +140,7 @@
                     </form>
                 </div>
                 <p class="auth-copyright">© 2026 Li Chengyan. All Rights Reserved.</p>
-                                <span class="auth-version">v3.3.4</span>
+                                <span class="auth-version">v3.4.0</span>
             </div>
         </div>
 
@@ -111,7 +151,7 @@
                 <div class="nav-left">
                     <img class="nav-logo-img" src="favicon.png" alt="Mark Logo">
                     <h1 class="logo">Mark</h1>
-                    <span id="version-display" class="version-badge" title="点击查看更新日志">v3.3.4</span>
+                    <span id="version-display" class="version-badge" title="点击查看更新日志">v3.4.0</span>
                     <div class="nav-menu-wrapper">
                         <button id="nav-menu-btn" class="nav-menu-btn" title="菜单">...</button>
                         <div id="theme-picker-dropdown" class="dropdown-menu theme-picker-dropdown hidden">
@@ -238,7 +278,7 @@
                 <div id="changelog-content">
                     <h2>更新日志</h2>
                     <div class="changelog-entry">
-                        <h3>v3.3.4 - 2026年6月26日</h3>
+                        <h3>v3.4.0 - 2026年6月26日</h3>
                         <ul>
                             <li>修复简洁模式登录后搜索框被快捷方式往上挤的问题</li>
                             <li>修复手机端键盘弹出时搜索框位置偏移问题</li>
@@ -893,5 +933,34 @@
     </div>
 
     <script defer src="app.js"></script>
+
+    <!-- 笔记面板 -->
+    <div class="notes-overlay" id="notes-overlay"></div>
+    <div class="notes-panel" id="notes-panel">
+        <div class="notes-header">
+            <h2>📝 我的笔记</h2>
+            <div class="notes-header-actions">
+                <button class="notes-btn notes-btn-primary" id="notes-new-btn">+ 新建笔记</button>
+                <button class="notes-btn notes-btn-ghost" id="notes-close-btn">关闭</button>
+            </div>
+        </div>
+        <div class="notes-body">
+            <div class="notes-list" id="notes-list">
+                <div class="notes-empty">
+                    <div class="notes-empty-icon">📋</div>
+                    <div class="notes-empty-text">暂无笔记<br>点击"新建笔记"开始记录</div>
+                </div>
+            </div>
+            <div class="notes-editor" id="notes-editor" style="display:none">
+                <input type="text" class="notes-editor-title" id="notes-editor-title" placeholder="笔记标题...">
+                <textarea class="notes-editor-content" id="notes-editor-content" placeholder="开始记录你的想法...&#10;&#10;支持纯文本编辑，自动保存到云端"></textarea>
+                <div class="notes-save-status" id="notes-save-status">未保存</div>
+            </div>
+            <div class="notes-empty" id="notes-editor-empty" style="flex:1;background:#fff">
+                <div class="notes-empty-icon">✏️</div>
+                <div class="notes-empty-text">选择一篇笔记开始编辑<br>或点击"新建笔记"创建</div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
