@@ -3525,7 +3525,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addItem('添加链接', () => addBookmarkToCurrentFolder());
 
-        addItem('📝 新建笔记', () => openNotesPanel(true));
+        addItem('新建笔记', () => { if(window.openNoteModal) window.openNoteModal(); });
 
         addItem('新建子文件夹', () => addSubfolderToCurrentFolder());
 
@@ -7660,92 +7660,193 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 }
 
-    // ==================== 笔记功能 ====================
-    let notesList = [];
-    let currentNote = null;
+
+// ==================== 笔记功能（模态框版） ====================
+(function() {
+    let currentNoteId = null;
     let notesSaveTimer = null;
-    let notesPanelOpen = false;
+    let notesCache = [];
 
-    const notesPanelEl = document.getElementById('notes-panel');
-    const notesOverlayEl = document.getElementById('notes-overlay');
-    const notesListEl = document.getElementById('notes-list');
-    const notesEditorEl = document.getElementById('notes-editor');
-    const notesEditorEmptyEl = document.getElementById('notes-editor-empty');
-    const notesEditorTitleEl = document.getElementById('notes-editor-title');
-    const notesEditorContentEl = document.getElementById('notes-editor-content');
-    const notesSaveStatusEl = document.getElementById('notes-save-status');
-    const notesNewBtnEl = document.getElementById('notes-new-btn');
-    const notesCloseBtnEl = document.getElementById('notes-close-btn');
+    const editorOverlay = document.getElementById('note-editor-overlay');
+    const editorModal = document.getElementById('note-editor-modal');
+    const editorTitle = document.getElementById('note-editor-title');
+    const titleInput = document.getElementById('note-title-input');
+    const contentTextarea = document.getElementById('note-content-textarea');
+    const saveStatus = document.getElementById('note-save-status');
+    const saveBtn = document.getElementById('note-save-btn');
+    const cancelBtn = document.getElementById('note-cancel-btn');
+    const deleteBtn = document.getElementById('note-delete-btn');
+    const closeBtn = document.getElementById('note-editor-close');
 
-    function openNotesPanel(createNew = false) {
-        if (!currentUserId) {
+    const listOverlay = document.getElementById('note-list-overlay');
+    const listBody = document.getElementById('note-list-body');
+    const listCount = document.getElementById('note-list-count');
+    const listCloseBtn = document.getElementById('note-list-close');
+    const listNewBtn = document.getElementById('note-list-new-btn');
+
+    function getUserId() {
+        return window.currentUserId || (window.currentUser && window.currentUser.id) || null;
+    }
+
+    // 打开新建笔记模态框
+    function openNoteModal(noteId) {
+        const userId = getUserId();
+        if (!userId) {
             alert('请先登录后使用笔记功能');
             return;
         }
-        notesPanelOpen = true;
-        notesPanelEl.classList.add('open');
-        notesOverlayEl.classList.add('show');
-        loadNotes();
-        if (createNew) {
-            setTimeout(() => createNewNote(), 300);
+        if (noteId) {
+            // 编辑已有笔记
+            const note = notesCache.find(n => n.id === noteId);
+            if (note) {
+                currentNoteId = noteId;
+                editorTitle.textContent = '编辑笔记';
+                titleInput.value = note.title || '';
+                contentTextarea.value = note.content || '';
+                deleteBtn.style.display = '';
+            }
+        } else {
+            // 新建笔记
+            currentNoteId = null;
+            editorTitle.textContent = '新建笔记';
+            titleInput.value = '';
+            contentTextarea.value = '';
+            deleteBtn.style.display = 'none';
+        }
+        saveStatus.textContent = '未保存';
+        saveStatus.className = 'note-modal-status';
+        editorOverlay.classList.add('show');
+        setTimeout(() => titleInput.focus(), 100);
+    }
+
+    function closeEditor() {
+        editorOverlay.classList.remove('show');
+        currentNoteId = null;
+        if (notesSaveTimer) { clearTimeout(notesSaveTimer); notesSaveTimer = null; }
+    }
+
+    function scheduleAutoSave() {
+        saveStatus.textContent = '输入中...';
+        saveStatus.className = 'note-modal-status saving';
+        if (notesSaveTimer) clearTimeout(notesSaveTimer);
+        notesSaveTimer = setTimeout(saveNote, 1000);
+    }
+
+    async function saveNote() {
+        const userId = getUserId();
+        if (!userId) return;
+        const title = titleInput.value.trim();
+        const content = contentTextarea.value;
+        if (!title && !content.trim()) {
+            saveStatus.textContent = '内容为空，未保存';
+            saveStatus.className = 'note-modal-status';
+            return;
+        }
+        saveStatus.textContent = '保存中...';
+        saveStatus.className = 'note-modal-status saving';
+        try {
+            if (currentNoteId) {
+                // 更新
+                const resp = await fetch(`/api/notes/${currentNoteId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    currentNoteId = data.note.id;
+                    saveStatus.textContent = '已保存 · ' + new Date().toLocaleTimeString('zh-CN');
+                    saveStatus.className = 'note-modal-status saved';
+                    await loadNotes();
+                }
+            } else {
+                // 新建
+                const resp = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, title, content })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    currentNoteId = data.note.id;
+                    deleteBtn.style.display = '';
+                    editorTitle.textContent = '编辑笔记';
+                    saveStatus.textContent = '已保存 · ' + new Date().toLocaleTimeString('zh-CN');
+                    saveStatus.className = 'note-modal-status saved';
+                    await loadNotes();
+                }
+            }
+        } catch (e) {
+            console.error('Save note error:', e);
+            saveStatus.textContent = '保存失败，点击"保存"重试';
+            saveStatus.className = 'note-modal-status';
         }
     }
 
-    function closeNotesPanel() {
-        notesPanelOpen = false;
-        notesPanelEl.classList.remove('open');
-        notesOverlayEl.classList.remove('show');
-        currentNote = null;
-        notesEditorEl.style.display = 'none';
-        notesEditorEmptyEl.style.display = 'flex';
+    async function deleteNote() {
+        if (!currentNoteId) return;
+        if (!confirm('确定要删除这篇笔记吗？此操作不可恢复！')) return;
+        try {
+            await fetch(`/api/notes/${currentNoteId}`, { method: 'DELETE' });
+            await loadNotes();
+            closeEditor();
+        } catch (e) {
+            console.error('Delete note error:', e);
+            alert('删除失败');
+        }
     }
 
     async function loadNotes() {
-        if (!currentUserId) return;
+        const userId = getUserId();
+        if (!userId) return;
         try {
-            const resp = await fetch(`/api/notes/${currentUserId}`);
-            notesList = await resp.json();
-            renderNotesList();
+            const resp = await fetch(`/api/notes/${userId}`);
+            notesCache = await resp.json();
+            renderNoteList();
         } catch (e) {
             console.error('Load notes error:', e);
         }
     }
 
-    function renderNotesList() {
-        if (!notesList || notesList.length === 0) {
-            notesListEl.innerHTML = '<div class="notes-empty"><div class="notes-empty-icon">📋</div><div class="notes-empty-text">暂无笔记<br>点击"新建笔记"开始记录</div></div>';
+    function renderNoteList() {
+        listCount.textContent = notesCache.length + ' 篇笔记';
+        if (notesCache.length === 0) {
+            listBody.innerHTML = '<div class="note-list-empty"><div class="note-list-empty-icon">📋</div><div class="note-list-empty-text">暂无笔记<br>点击"新建笔记"开始记录</div></div>';
             return;
         }
-        notesListEl.innerHTML = notesList.map(note => {
+        listBody.innerHTML = notesCache.map(note => {
             const title = note.title || '无标题笔记';
-            const preview = (note.content || '').replace(/\n/g, ' ').substring(0, 50) || '无内容';
-            const time = formatNoteTime(note.updated_at);
-            const active = currentNote && currentNote.id === note.id ? 'active' : '';
-            return `<div class="notes-list-item ${active}" data-id="${note.id}">
-                <div class="notes-list-title ${note.title ? '' : 'empty'}">${escapeHtml(title)}</div>
-                <div class="notes-list-preview">${escapeHtml(preview)}</div>
-                <div class="notes-list-time">${time}</div>
-                <button class="notes-list-delete" data-id="${note.id}" title="删除">🗑️</button>
+            const preview = (note.content || '').replace(/\n/g, ' ').substring(0, 60) || '无内容';
+            const time = formatTime(note.updated_at);
+            return `<div class="note-list-item" data-id="${note.id}">
+                <div class="note-list-item-info">
+                    <div class="note-list-item-title ${note.title ? '' : 'empty'}">${escapeHtml(title)}</div>
+                    <div class="note-list-item-preview">${escapeHtml(preview)}</div>
+                    <div class="note-list-item-time">${time}</div>
+                </div>
+                <button class="note-list-item-delete" data-id="${note.id}" title="删除">🗑️</button>
             </div>`;
         }).join('');
-
-        notesListEl.querySelectorAll('.notes-list-item').forEach(item => {
+        listBody.querySelectorAll('.note-list-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                if (e.target.classList.contains('notes-list-delete')) return;
+                if (e.target.classList.contains('note-list-item-delete')) return;
                 const id = parseInt(item.dataset.id);
-                openNote(id);
+                listOverlay.classList.remove('show');
+                openNoteModal(id);
             });
         });
-        notesListEl.querySelectorAll('.notes-list-delete').forEach(btn => {
+        listBody.querySelectorAll('.note-list-item-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = parseInt(btn.dataset.id);
-                deleteNote(id);
+                if (confirm('确定要删除这篇笔记吗？')) {
+                    fetch(`/api/notes/${id}`, { method: 'DELETE' }).then(() => loadNotes());
+                }
             });
         });
     }
 
-    function formatNoteTime(dateStr) {
+    function formatTime(dateStr) {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         const now = new Date();
@@ -7763,105 +7864,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
-    async function createNewNote() {
-        if (!currentUserId) {
-            alert('请先登录');
-            return;
-        }
-        try {
-            const resp = await fetch('/api/notes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUserId, title: '', content: '' })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                await loadNotes();
-                openNote(data.note.id);
-            }
-        } catch (e) {
-            console.error('Create note error:', e);
-            alert('创建笔记失败');
-        }
-    }
-
-    function openNote(id) {
-        const note = notesList.find(n => n.id === id);
-        if (!note) return;
-        currentNote = note;
-        notesEditorEl.style.display = 'flex';
-        notesEditorEmptyEl.style.display = 'none';
-        notesEditorTitleEl.value = note.title || '';
-        notesEditorContentEl.value = note.content || '';
-        notesSaveStatusEl.textContent = '已保存';
-        notesSaveStatusEl.className = 'notes-save-status saved';
-        renderNotesList();
-    }
-
-    function scheduleNoteSave() {
-        if (!currentNote) return;
-        notesSaveStatusEl.textContent = '保存中...';
-        notesSaveStatusEl.className = 'notes-save-status saving';
-        if (notesSaveTimer) clearTimeout(notesSaveTimer);
-        notesSaveTimer = setTimeout(saveNote, 800);
-    }
-
-    async function saveNote() {
-        if (!currentNote) return;
-        const title = notesEditorTitleEl.value;
-        const content = notesEditorContentEl.value;
-        try {
-            const resp = await fetch(`/api/notes/${currentNote.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, content })
-            });
-            const data = await resp.json();
-            if (data.success) {
-                currentNote = data.note;
-                const idx = notesList.findIndex(n => n.id === currentNote.id);
-                if (idx >= 0) notesList[idx] = currentNote;
-                notesSaveStatusEl.textContent = '已保存 · ' + new Date().toLocaleTimeString('zh-CN');
-                notesSaveStatusEl.className = 'notes-save-status saved';
-                renderNotesList();
-            }
-        } catch (e) {
-            console.error('Save note error:', e);
-            notesSaveStatusEl.textContent = '保存失败，点击重试';
-            notesSaveStatusEl.className = 'notes-save-status';
-        }
-    }
-
-    async function deleteNote(id) {
-        const note = notesList.find(n => n.id === id);
-        const title = note && note.title ? note.title : '无标题笔记';
-        if (!confirm(`确定要删除笔记「${title}」吗？此操作不可恢复！`)) return;
-        try {
-            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
-            notesList = notesList.filter(n => n.id !== id);
-            if (currentNote && currentNote.id === id) {
-                currentNote = null;
-                notesEditorEl.style.display = 'none';
-                notesEditorEmptyEl.style.display = 'flex';
-            }
-            renderNotesList();
-        } catch (e) {
-            console.error('Delete note error:', e);
-            alert('删除失败');
-        }
+    function openNoteList() {
+        const userId = getUserId();
+        if (!userId) { alert('请先登录'); return; }
+        loadNotes();
+        listOverlay.classList.add('show');
     }
 
     // 事件绑定
-    if (notesOverlayEl) notesOverlayEl.addEventListener('click', closeNotesPanel);
-    if (notesCloseBtnEl) notesCloseBtnEl.addEventListener('click', closeNotesPanel);
-    if (notesNewBtnEl) notesNewBtnEl.addEventListener('click', createNewNote);
-    if (notesEditorTitleEl) notesEditorTitleEl.addEventListener('input', scheduleNoteSave);
-    if (notesEditorContentEl) notesEditorContentEl.addEventListener('input', scheduleNoteSave);
-    if (notesSaveStatusEl) {
-        notesSaveStatusEl.addEventListener('click', () => {
-            if (notesSaveStatusEl.textContent.includes('失败')) saveNote();
-        });
-    }
+    if (closeBtn) closeBtn.addEventListener('click', closeEditor);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeEditor);
+    if (saveBtn) saveBtn.addEventListener('click', saveNote);
+    if (deleteBtn) deleteBtn.addEventListener('click', deleteNote);
+    if (titleInput) titleInput.addEventListener('input', scheduleAutoSave);
+    if (contentTextarea) contentTextarea.addEventListener('input', scheduleAutoSave);
+    if (editorOverlay) editorOverlay.addEventListener('click', (e) => {
+        if (e.target === editorOverlay) closeEditor();
+    });
 
-    // 暴露到全局供菜单调用
-    window.openNotesPanel = openNotesPanel;
+    if (listCloseBtn) listCloseBtn.addEventListener('click', () => listOverlay.classList.remove('show'));
+    if (listNewBtn) listNewBtn.addEventListener('click', () => {
+        listOverlay.classList.remove('show');
+        openNoteModal();
+    });
+    if (listOverlay) listOverlay.addEventListener('click', (e) => {
+        if (e.target === listOverlay) listOverlay.classList.remove('show');
+    });
+
+    // ESC 关闭
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (editorOverlay.classList.contains('show')) closeEditor();
+            if (listOverlay.classList.contains('show')) listOverlay.classList.remove('show');
+        }
+    });
+
+    // 暴露到全局
+    window.openNoteModal = openNoteModal;
+    window.openNoteList = openNoteList;
+})();
