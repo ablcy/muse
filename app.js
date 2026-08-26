@@ -7813,6 +7813,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 loadSearchHistoryFromCloud();
 
+                // 加载笔记树（云端同步）
+
+                loadNoteTree().then(() => {
+                    renderFolderTree();
+                });
+
                 // 同步完成后刷新简洁模式书签
 
                 if (currentViewMode === 'clean') renderCleanModeBookmarks();
