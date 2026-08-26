@@ -3527,6 +3527,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addItem('新建笔记', () => { if(window.openNoteModal) window.openNoteModal(); });
 
+        addItem('我的笔记', () => { if(window.openNoteList) window.openNoteList(); });
+
         addItem('新建子文件夹', () => addSubfolderToCurrentFolder());
 
         addItem('新建同级文件夹', () => addSiblingFolder());
