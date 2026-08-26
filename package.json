@@ -19,5 +19,6 @@
     "database"
   ],
   "author": "ablcy",
-  "license": "MIT"
+  "license": "MIT",
+  "type": "commonjs"
 }
