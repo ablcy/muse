@@ -3549,7 +3549,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        if (folder._treeType === 'notes') {
+        const isNoteTree = folder._treeType === 'notes' || (!folder._treeType && currentRootMode === 'notes');
+        if (isNoteTree) {
             addItem('新建笔记', () => addNoteToCurrentFolder());
         } else {
             addItem('添加链接', () => addBookmarkToCurrentFolder());
@@ -5912,6 +5913,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (child.type === 'folder') {
 
+                    if (folder._treeType) child._treeType = folder._treeType;
                     const childItem = renderFolderItem(child, folder.children, i);
 
                     subfolders.appendChild(childItem);
