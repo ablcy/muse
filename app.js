@@ -3354,6 +3354,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // 获取当前活动的数据树
+    function getActiveTree() {
+        if (selectedFolder && selectedFolder._treeType === 'notes') return noteTree;
+        if (currentRootMode === 'notes') return noteTree;
+        return bookmarks;
+    }
+
+    // 保存当前活动的数据树
+    async function saveActiveTree() {
+        if (selectedFolder && selectedFolder._treeType === 'notes') return saveNoteTree();
+        if (currentRootMode === 'notes') return saveNoteTree();
+        return saveBookmarks();
+    }
+
     // 新建子文件夹（在选中文件夹内创建）
     async function addSubfolderToCurrentFolder() {
 
@@ -3383,11 +3397,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
 
-            bookmarks.push(newFolder);
+            getActiveTree().push(newFolder);
 
         }
 
-        await saveBookmarks();
+        await saveActiveTree();
 
         renderFolderTree();
 
@@ -3401,7 +3415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             selectedFolderName.textContent = currentRootMode === 'notes' ? '笔记目录' : '书签目录';
 
-            updateBookmarksList(getAllBookmarks(bookmarks));
+            updateBookmarksList(getAllBookmarks(getActiveTree()));
 
         }
 
@@ -3465,9 +3479,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        const parentArray = findParentArray(bookmarks, selectedFolder)
+        const activeTree = getActiveTree();
+        const parentArray = findParentArray(activeTree, selectedFolder)
 
-            || (bookmarks.includes(selectedFolder) ? bookmarks : null);
+            || (activeTree.includes(selectedFolder) ? activeTree : null);
 
 
 
@@ -3481,13 +3496,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // fallback: 加到根级
 
-            bookmarks.push(newFolder);
+            activeTree.push(newFolder);
 
         }
 
 
 
-        await saveBookmarks();
+        await saveActiveTree();
 
         renderFolderTree();
 
