@@ -7685,7 +7685,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const listNewBtn = document.getElementById('note-list-new-btn');
 
     function getUserId() {
-        return window.currentUserId || (window.currentUser && window.currentUser.id) || null;
+        try {
+            const stored = localStorage.getItem('mark_current_user');
+            if (stored) {
+                const user = JSON.parse(stored);
+                return user.id;
+            }
+        } catch (e) {}
+        return null;
     }
 
     // 打开新建笔记模态框
