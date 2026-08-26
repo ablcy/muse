@@ -5709,14 +5709,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         folderTree.innerHTML = '';
 
-        // 渲染书签目录分组
-        const bookmarkHeader = document.createElement('div');
-        bookmarkHeader.className = 'root-category-header';
-        bookmarkHeader.textContent = '📁 书签目录';
-        bookmarkHeader.style.cssText = 'padding:8px 12px;font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;';
-        bookmarkHeader.onclick = () => { currentRootMode = 'bookmarks'; selectDefaultFolder(); renderFolderTree(); };
-        folderTree.appendChild(bookmarkHeader);
-
+        // 渲染书签目录文件夹
         const bookmarkFolders = bookmarks.filter(item => item.type === 'folder');
         for (let i = 0; i < bookmarkFolders.length; i++) {
             bookmarkFolders[i]._treeType = 'bookmarks';
@@ -5724,14 +5717,7 @@ document.addEventListener('DOMContentLoaded', () => {
             folderTree.appendChild(childItem);
         }
 
-        // 渲染笔记目录分组
-        const noteHeader = document.createElement('div');
-        noteHeader.className = 'root-category-header';
-        noteHeader.textContent = '📝 笔记目录';
-        noteHeader.style.cssText = 'padding:8px 12px;font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;margin-top:8px;';
-        noteHeader.onclick = () => { currentRootMode = 'notes'; selectDefaultFolder(); renderFolderTree(); };
-        folderTree.appendChild(noteHeader);
-
+        // 渲染笔记目录文件夹
         const noteFolders = noteTree.filter(item => item.type === 'folder');
         for (let i = 0; i < noteFolders.length; i++) {
             noteFolders[i]._treeType = 'notes';
