@@ -128,6 +128,18 @@ async function initDatabase() {
                 )
             `);
             console.log('User preferences table created or already exists');
+
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS notes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    title VARCHAR(500) NOT NULL DEFAULT '',
+                    content TEXT NOT NULL DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            console.log('Notes table created or already exists');
             
             console.log('Database tables initialized successfully');
             return true;
@@ -1108,6 +1120,75 @@ app.get('/api/bing-suggestions', async (req, res) => {
     } catch (err) {
         console.error('[Bing Proxy] Error:', err.name, err.message);
         res.json([]);
+    }
+});
+
+// ==================== 笔记 API ====================
+
+// 获取用户所有笔记
+app.get('/api/notes/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT id, title, content, created_at, updated_at FROM notes WHERE user_id = $1 ORDER BY updated_at DESC',
+            [userId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Get notes error:', err);
+        res.status(500).json({ error: '获取笔记失败' });
+    }
+});
+
+// 创建新笔记
+app.post('/api/notes', async (req, res) => {
+    const { userId, title, content } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: '用户ID不能为空' });
+    }
+    try {
+        const result = await pool.query(
+            'INSERT INTO notes (user_id, title, content) VALUES ($1, $2, $3) RETURNING id, title, content, created_at, updated_at',
+            [userId, title || '', content || '']
+        );
+        res.json({ success: true, note: result.rows[0] });
+    } catch (err) {
+        console.error('Create note error:', err);
+        res.status(500).json({ error: '创建笔记失败' });
+    }
+});
+
+// 更新笔记
+app.put('/api/notes/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE notes SET title = $1, content = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id, title, content, created_at, updated_at',
+            [title || '', content || '', id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '笔记不存在' });
+        }
+        res.json({ success: true, note: result.rows[0] });
+    } catch (err) {
+        console.error('Update note error:', err);
+        res.status(500).json({ error: '更新笔记失败' });
+    }
+});
+
+// 删除笔记
+app.delete('/api/notes/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('DELETE FROM notes WHERE id = $1 RETURNING id', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: '笔记不存在' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete note error:', err);
+        res.status(500).json({ error: '删除笔记失败' });
     }
 });
 
