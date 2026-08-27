@@ -3313,19 +3313,336 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderFolderTree();
 
-        selectDefaultFolder();
+        renderCleanModeBookmarks();
 
-        // 切换笔记/书签视图
-        const bookmarkView = document.getElementById('bookmark-view');
-        const noteView = document.getElementById('note-view');
-        if (currentRootMode === 'notes') {
-            if (bookmarkView) bookmarkView.classList.add('hidden');
-            if (noteView) noteView.classList.remove('hidden');
-            renderNoteList();
+        if (parent) {
+
+            selectedFolderName.textContent = parent.name;
+
+            updateBookmarksList(parent.children || []);
+
         } else {
-            if (bookmarkView) bookmarkView.classList.remove('hidden');
-            if (noteView) noteView.classList.add('hidden');
+
+            selectedFolderName.textContent = currentRootMode === 'notes' ? '笔记目录' : '书签目录';
+
+            updateBookmarksList(getAllBookmarks(bookmarks));
+
         }
+
+    }
+
+
+
+    // 在当前文件夹下新建笔记（笔记目录专用）
+    async function addNoteToCurrentFolder() {
+        const parent = selectedFolder;
+        const newNote = {
+            type: 'note',
+            title: '',
+            content: '',
+            dateAdded: Math.floor(Date.now() / 1000)
+        };
+        const parentArray = parent ? (parent.children || (parent.children = [])) : noteTree;
+        parentArray.push(newNote);
+        await saveNoteTree();
+        renderFolderTree();
+        if (parent) {
+            selectedFolderName.textContent = parent.name;
+            updateBookmarksList(parent.children || []);
+        } else {
+            updateBookmarksList(noteTree);
+        }
+        setTimeout(() => openNoteEditorForTreeItem(newNote, parentArray), 100);
+    }
+
+
+    // 获取当前活动的数据树
+    function getActiveTree() {
+        if (selectedFolder && selectedFolder._treeType === 'notes') return noteTree;
+        if (currentRootMode === 'notes') return noteTree;
+        return bookmarks;
+    }
+
+    // 保存当前活动的数据树
+    async function saveActiveTree() {
+        if (selectedFolder && selectedFolder._treeType === 'notes') return saveNoteTree();
+        if (currentRootMode === 'notes') return saveNoteTree();
+        return saveBookmarks();
+    }
+
+    // 新建子文件夹（在选中文件夹内创建）
+    async function addSubfolderToCurrentFolder() {
+
+        const name = prompt('子文件夹名称：');
+
+        if (!name) return;
+
+        const parent = selectedFolder;
+
+        const newFolder = {
+
+            type: 'folder',
+
+            name: name,
+
+            dateAdded: Math.floor(Date.now() / 1000),
+
+            children: []
+
+        };
+
+        if (parent) {
+
+            if (!parent.children) parent.children = [];
+
+            parent.children.push(newFolder);
+
+        } else {
+
+            getActiveTree().push(newFolder);
+
+        }
+
+        await saveActiveTree();
+
+        renderFolderTree();
+
+        if (parent) {
+
+            selectedFolderName.textContent = parent.name;
+
+            updateBookmarksList(parent.children || []);
+
+        } else {
+
+            selectedFolderName.textContent = currentRootMode === 'notes' ? '笔记目录' : '书签目录';
+
+            updateBookmarksList(getAllBookmarks(getActiveTree()));
+
+        }
+
+    }
+
+
+
+    // 新建同级文件夹（在选中文件夹的父级中创建）
+
+    async function addSiblingFolder() {
+
+        if (!selectedFolder) {
+
+            alert('请先在左侧选中一个文件夹！');
+
+            return;
+
+        }
+
+        const name = prompt('同级文件夹名称：');
+
+        if (!name) return;
+
+
+
+        const newFolder = {
+
+            type: 'folder',
+
+            name: name,
+
+            dateAdded: Math.floor(Date.now() / 1000),
+
+            children: []
+
+        };
+
+
+
+        // 递归查找 selectedFolder 所在的数组和索引（通过 name + dateAdded 匹配，避免对象引用问题）
+
+        function findInTree(items, target) {
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].name === target.name && items[i].dateAdded === target.dateAdded && items[i].type === target.type) {
+                    return { array: items, index: i };
+                }
+                if (items[i].type === 'folder' && items[i].children) {
+                    const found = findInTree(items[i].children, target);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        const activeTree = getActiveTree();
+        const found = findInTree(activeTree, selectedFolder);
+
+        if (found) {
+            // 加到同一层级的最下方
+            found.array.push(newFolder);
+        } else {
+            // fallback: 加到根级末尾
+            activeTree.push(newFolder);
+        }
+
+
+
+        await saveActiveTree();
+
+        renderFolderTree();
+
+        // 保持当前选中不变，刷新内容区
+
+        if (selectedFolder) {
+
+            updateBookmarksList(selectedFolder.children || []);
+
+        }
+
+    }
+
+
+
+    // 为文件夹添加 ... 菜单按钮（左侧 sidebar 和右侧内容区共用）
+
+    function attachFolderMenuBtn(container, folder, btnCssClass) {
+
+        const btn = document.createElement('button');
+
+        btn.className = btnCssClass || 'folder-menu-btn';
+
+        btn.textContent = '...';
+
+        btn.title = '文件夹菜单';
+
+
+
+        const menu = document.createElement('div');
+
+        menu.className = 'dropdown-menu hidden';
+
+
+
+        function addItem(label, onClick, isDanger) {
+
+            const item = document.createElement('button');
+
+            item.className = 'dropdown-item' + (isDanger ? ' dropdown-item--danger' : '');
+
+            item.textContent = label;
+
+            item.addEventListener('click', (e) => {
+
+                e.stopPropagation();
+
+                menu.classList.add('hidden');
+
+                selectedFolder = folder;
+
+                onClick();
+
+            });
+
+            menu.appendChild(item);
+
+        }
+
+
+
+        const isNoteTree = folder._treeType === 'notes' || (!folder._treeType && currentRootMode === 'notes');
+        if (isNoteTree) {
+            addItem('新建笔记', () => addNoteToCurrentFolder());
+        } else {
+            addItem('添加链接', () => addBookmarkToCurrentFolder());
+        }
+
+        addItem('新建子文件夹', () => addSubfolderToCurrentFolder());
+
+        addItem('新建同级文件夹', () => addSiblingFolder());
+
+
+
+        const divider1 = document.createElement('div');
+
+        divider1.className = 'dropdown-divider';
+
+        menu.appendChild(divider1);
+
+
+
+        addItem('导入', () => importBookmarks());
+
+        addItem('导出', () => exportBookmarks());
+
+
+
+        const divider2 = document.createElement('div');
+
+        divider2.className = 'dropdown-divider';
+
+        menu.appendChild(divider2);
+
+
+
+        addItem('修改名称', async () => {
+
+            const newName = prompt('请输入新的文件夹名称：', folder.name);
+
+            if (!newName || !newName.trim()) return;
+
+            folder.name = newName.trim();
+
+            await saveBookmarks();
+
+            renderFolderTree();
+
+            selectedFolderName.textContent = folder.name;
+
+            updateBookmarksList(folder.children || []);
+
+        });
+
+
+
+        addItem('去层', async () => {
+
+            if (folder.name === '书签目录' || folder.name === '笔记目录') { alert('根目录不能去层！'); return; }
+
+            function findParentArr(items, target) {
+
+                for (const item of items) {
+
+                    if (item.type === 'folder' && item.children) {
+
+                        if (item.children.includes(target)) return item.children;
+
+                        const f = findParentArr(item.children, target);
+
+                        if (f) return f;
+
+                    }
+
+                }
+
+                return null;
+
+            }
+
+            const parentArray = findParentArr(bookmarks, folder) || (bookmarks.includes(folder) ? bookmarks : null);
+
+            if (!parentArray) { alert('找不到父文件夹，操作失败！'); return; }
+
+            if (!confirm('确定要去层文件夹「' + folder.name + '」？\n其所有子内容将提升到上一级，文件夹本身将被删除。')) return;
+
+            const idx = parentArray.indexOf(folder);
+
+            const children = folder.children || [];
+
+            parentArray.splice(idx, 1, ...children);
+
+            await saveBookmarks();
+
+            renderFolderTree();
+
+            selectDefaultFolder();
 
         });
 
@@ -4136,9 +4453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadSearchHistoryFromCloud();
 
                 // 加载笔记树
-                loadNoteTree().then(() => {
-                    renderFolderTree();
-                }).catch(() => {});
+                loadNoteTree();
 
                 applyLanguage();
 
@@ -5000,21 +5315,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (data.success && data.noteTree && data.noteTree.length > 0) {
+            if (data.success && data.noteTree) {
 
                 noteTree = data.noteTree;
-
-            } else {
-
-                // 服务器无数据时，初始化默认笔记目录
-                if (!noteTree || noteTree.length === 0) {
-                    noteTree = [{
-                        type: 'folder',
-                        name: '笔记目录',
-                        dateAdded: Math.floor(Date.now() / 1000),
-                        children: []
-                    }];
-                }
 
             }
 
@@ -5408,17 +5711,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const folderNameEl = document.getElementById('note-folder-name');
         if (!noteListEl) return;
 
-        // 更新文件夹名称
         if (folderNameEl) {
             folderNameEl.textContent = selectedFolder ? selectedFolder.name : '全部笔记';
         }
 
-        // 获取当前文件夹下的笔记
         let notes = [];
         if (selectedFolder && selectedFolder.children) {
             notes = selectedFolder.children.filter(item => item.type === 'note');
         } else if (!selectedFolder) {
-            // 全部笔记：递归获取所有笔记
             function getAllNotes(items) {
                 let result = [];
                 for (const item of items) {
@@ -5454,7 +5754,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const date = document.createElement('div');
             date.className = 'note-card-date';
             const d = new Date((note.dateAdded || Date.now()/1000) * 1000);
-            date.textContent = `${d.getMonth()+1}月${d.getDate()}日`;
+            date.textContent = (d.getMonth()+1) + '月' + d.getDate() + '日';
 
             card.appendChild(title);
             card.appendChild(preview);
@@ -5470,80 +5770,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 打开笔记编辑器
     function openNoteEditor(note) {
         const titleInput = document.getElementById('note-title-input');
         const contentTextarea = document.getElementById('note-content-textarea');
-        const wordCount = document.getElementById('note-word-count');
         if (!titleInput || !contentTextarea) return;
-
         titleInput.value = note.title || '';
         contentTextarea.value = note.content || '';
         updateNoteWordCount();
     }
 
-    // 更新字数统计
     function updateNoteWordCount() {
         const contentTextarea = document.getElementById('note-content-textarea');
         const wordCount = document.getElementById('note-word-count');
         if (!contentTextarea || !wordCount) return;
-        const text = contentTextarea.value || '';
-        wordCount.textContent = `字数:${text.length}`;
+        wordCount.textContent = '字数:' + (contentTextarea.value || '').length;
     }
 
-    // 新建笔记
     async function createNewNote() {
-        if (!selectedFolder) {
-            alert('请先在左侧选中一个文件夹！');
-            return;
-        }
-
-        const newNote = {
-            type: 'note',
-            title: '',
-            content: '',
-            dateAdded: Math.floor(Date.now() / 1000)
-        };
-
+        if (!selectedFolder) { alert('请先在左侧选中一个文件夹！'); return; }
+        const newNote = { type: 'note', title: '', content: '', dateAdded: Math.floor(Date.now() / 1000) };
         if (!selectedFolder.children) selectedFolder.children = [];
         selectedFolder.children.push(newNote);
         currentNote = newNote;
-
         await saveNoteTree();
         renderNoteList();
         openNoteEditor(newNote);
-
-        // 聚焦标题输入框
-        setTimeout(() => {
-            const titleInput = document.getElementById('note-title-input');
-            if (titleInput) titleInput.focus();
-        }, 100);
+        setTimeout(() => { const t = document.getElementById('note-title-input'); if (t) t.focus(); }, 100);
     }
 
-    // 保存当前笔记
     async function saveCurrentNote() {
         if (!currentNote) return;
-
         const titleInput = document.getElementById('note-title-input');
         const contentTextarea = document.getElementById('note-content-textarea');
         const saveStatus = document.getElementById('note-save-status');
-
         if (titleInput) currentNote.title = titleInput.value;
         if (contentTextarea) currentNote.content = contentTextarea.value;
-
-        if (saveStatus) {
-            saveStatus.textContent = '保存中...';
-            saveStatus.classList.add('saving');
-        }
-
+        if (saveStatus) { saveStatus.textContent = '保存中...'; saveStatus.classList.add('saving'); }
         await saveNoteTree();
-
         if (saveStatus) {
             saveStatus.textContent = '已保存';
             saveStatus.classList.remove('saving');
             setTimeout(() => { saveStatus.textContent = ''; }, 2000);
         }
-
         renderNoteList();
     }
 
@@ -5698,6 +5966,18 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedFolder = folder;
 
             if (folder._treeType) currentRootMode = folder._treeType;
+
+            // 切换笔记/书签视图
+            const bmView = document.getElementById('bookmark-view');
+            const ntView = document.getElementById('note-view');
+            if (currentRootMode === 'notes') {
+                if (bmView) bmView.classList.add('hidden');
+                if (ntView) ntView.classList.remove('hidden');
+                renderNoteList();
+            } else {
+                if (bmView) bmView.classList.remove('hidden');
+                if (ntView) ntView.classList.add('hidden');
+            }
 
             selectedFolderName.textContent = folder.name;
 
@@ -7131,6 +7411,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (folder._treeType) currentRootMode = folder._treeType;
 
+            // 切换笔记/书签视图
+            const bmView = document.getElementById('bookmark-view');
+            const ntView = document.getElementById('note-view');
+            if (currentRootMode === 'notes') {
+                if (bmView) bmView.classList.add('hidden');
+                if (ntView) ntView.classList.remove('hidden');
+                renderNoteList();
+            } else {
+                if (bmView) bmView.classList.remove('hidden');
+                if (ntView) ntView.classList.add('hidden');
+            }
+
             selectedFolderName.textContent = folder.name;
 
             updateBookmarksList(folder.children || []);
@@ -7658,27 +7950,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 加载搜索历史（云端同步）
 
                 loadSearchHistoryFromCloud();
-
-                // 加载笔记树（云端同步）
-                loadNoteTree().then(() => {
-                    // 确保笔记目录存在
-                    if (!noteTree || noteTree.length === 0) {
-                        noteTree = [{
-                            type: 'folder',
-                            name: '笔记目录',
-                            dateAdded: Math.floor(Date.now() / 1000),
-                            children: []
-                        }];
-                    }
-                    renderFolderTree();
-                    // 如果当前在笔记模式，重新选中默认文件夹
-                    if (currentRootMode === 'notes') {
-                        selectDefaultFolder();
-                    }
-                }).catch(() => {
-                    // 加载失败时也确保渲染
-                    renderFolderTree();
-                });
 
                 // 同步完成后刷新简洁模式书签
 
