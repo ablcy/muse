@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -62,6 +62,66 @@
         .skeleton-line{height:12px;background:#e8e8e8;border-radius:6px;margin-bottom:8px;animation:skeleton-pulse 1.5s ease-in-out infinite}
         .skeleton-line:last-child{margin-bottom:0}
         @keyframes skeleton-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+        /* === 笔记视图三栏布局 CSS === */
+        .note-view{flex:1;display:flex;min-height:0;overflow:hidden}
+        .note-list-panel{width:320px;min-width:320px;border-right:1px solid #eee;display:flex;flex-direction:column;background:#fafafa}
+        .note-list-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee;background:#fff}
+        .note-folder-name{font-size:16px;font-weight:600;color:#333}
+        .note-list-actions{display:flex;gap:4px}
+        .note-icon-btn{width:32px;height:32px;border:none;background:transparent;color:#666;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .note-icon-btn:hover{background:#f0f0f0;color:#333}
+        .note-new-btn{color:#3498db}
+        .note-new-btn:hover{background:#e8f4fd;color:#2980b9}
+        .note-list{flex:1;overflow-y:auto;padding:8px}
+        .note-card{padding:14px 16px;border-radius:8px;cursor:pointer;margin-bottom:4px;transition:all .15s;border:1px solid transparent}
+        .note-card:hover{background:#f0f0f0}
+        .note-card.active{background:#e8e8e8;border-color:#ddd}
+        .note-card-title{font-size:15px;font-weight:600;color:#333;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .note-card-preview{font-size:13px;color:#888;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
+        .note-card-date{font-size:12px;color:#aaa}
+        .note-empty-state{text-align:center;padding:60px 20px;color:#999}
+        .note-empty-state p{margin-bottom:8px}
+        .note-empty-hint{font-size:13px;color:#bbb}
+
+        /* 笔记编辑器 */
+        .note-editor-panel{flex:1;display:flex;flex-direction:column;background:#fff;min-width:0}
+        .note-editor-toolbar{display:flex;align-items:center;gap:4px;padding:10px 16px;border-bottom:1px solid #eee;background:#fafafa;flex-wrap:wrap}
+        .toolbar-group{display:flex;align-items:center;gap:2px}
+        .toolbar-divider{width:1px;height:20px;background:#ddd;margin:0 6px}
+        .toolbar-btn{width:30px;height:30px;border:none;background:transparent;color:#555;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+        .toolbar-btn:hover{background:#e8e8e8;color:#333}
+        .toolbar-select{height:30px;padding:0 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;color:#555;background:#fff;cursor:pointer;outline:none}
+        .toolbar-select:focus{border-color:#3498db}
+        .note-editor-content{flex:1;display:flex;flex-direction:column;padding:24px 32px;overflow-y:auto}
+        .note-title-input{width:100%;border:none;outline:none;font-size:28px;font-weight:700;color:#222;margin-bottom:12px;font-family:inherit;background:transparent}
+        .note-title-input::placeholder{color:#ccc;font-weight:400}
+        .note-meta{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #f0f0f0}
+        .note-word-count{font-size:13px;color:#999}
+        .note-save-status{font-size:13px;color:#27ae60}
+        .note-save-status.saving{color:#f39c12}
+        .note-content-textarea{flex:1;width:100%;border:none;outline:none;font-size:15px;line-height:1.8;color:#444;font-family:inherit;resize:none;background:transparent;min-height:300px}
+        .note-content-textarea::placeholder{color:#ddd}
+
+        /* 书签视图隐藏 */
+        .bookmark-view{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .bookmark-view .content-header{flex-shrink:0}
+        .bookmark-view .bookmarks-list{flex:1;overflow-y:auto}
+
+        /* 响应式 */
+        @media(max-width:768px){
+            .note-list-panel{width:200px;min-width:200px}
+            .note-editor-content{padding:16px}
+            .note-title-input{font-size:22px}
+            .note-editor-toolbar{padding:8px;gap:2px}
+            .toolbar-btn{width:26px;height:26px}
+        }
+        @media(max-width:480px){
+            .note-view{flex-direction:column}
+            .note-list-panel{width:100%;min-width:100%;max-height:40%;border-right:none;border-bottom:1px solid #eee}
+            .note-editor-panel{flex:1}
+        }
+
         /* 响应式 */
         @media(max-width:768px){
             .top-nav{padding:8px 12px}
@@ -225,34 +285,101 @@
 
                 <!-- 右侧内容区 -->
                 <main class="content-area">
-                    <div class="content-header">
-                        <h2 id="selected-folder-name">全部书签</h2>
-                        <div id="content-actions" class="content-actions hidden">
-                            <div class="menu-wrapper">
-                                <button id="more-menu-btn" class="action-btn">...</button>
-                                <div id="more-menu-dropdown" class="dropdown-menu hidden">
-                                    <button id="menu-add-bookmark-btn" class="dropdown-item">添加链接</button>
-                                    <button id="menu-add-subfolder-btn" class="dropdown-item">新建子文件夹</button>
-                                    <button id="menu-add-sibling-btn" class="dropdown-item">新建同级文件夹</button>
-                                    <div class="dropdown-divider"></div>
-                                    <button id="menu-import-btn" class="dropdown-item">导入</button>
-                                    <button id="menu-export-btn" class="dropdown-item">导出</button>
-                                    <div class="dropdown-divider"></div>
-                                    <button id="menu-rename-btn" class="dropdown-item">修改名称</button>
-                                    <button id="menu-flatten-btn" class="dropdown-item">去层</button>
-                                    <div class="dropdown-divider"></div>
-                                    <button id="menu-delete-btn" class="dropdown-item dropdown-item--danger">删除收藏夹</button>
+                    <!-- 书签模式内容 -->
+                    <div id="bookmark-view" class="bookmark-view">
+                        <div class="content-header">
+                            <h2 id="selected-folder-name">全部书签</h2>
+                            <div id="content-actions" class="content-actions hidden">
+                                <div class="menu-wrapper">
+                                    <button id="more-menu-btn" class="action-btn">...</button>
+                                    <div id="more-menu-dropdown" class="dropdown-menu hidden">
+                                        <button id="menu-add-bookmark-btn" class="dropdown-item">添加链接</button>
+                                        <button id="menu-add-subfolder-btn" class="dropdown-item">新建子文件夹</button>
+                                        <button id="menu-add-sibling-btn" class="dropdown-item">新建同级文件夹</button>
+                                        <div class="dropdown-divider"></div>
+                                        <button id="menu-import-btn" class="dropdown-item">导入</button>
+                                        <button id="menu-export-btn" class="dropdown-item">导出</button>
+                                        <div class="dropdown-divider"></div>
+                                        <button id="menu-rename-btn" class="dropdown-item">修改名称</button>
+                                        <button id="menu-flatten-btn" class="dropdown-item">去层</button>
+                                        <div class="dropdown-divider"></div>
+                                        <button id="menu-delete-btn" class="dropdown-item dropdown-item--danger">删除收藏夹</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <div id="bookmarks-list" class="bookmarks-list">
+                            <div class="skeleton-card"><div class="skeleton-line" style="width:30%"></div><div class="skeleton-line" style="width:80%"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-line" style="width:35%"></div><div class="skeleton-line" style="width:70%"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-line" style="width:25%"></div><div class="skeleton-line" style="width:75%"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-line" style="width:40%"></div><div class="skeleton-line" style="width:65%"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-line" style="width:28%"></div><div class="skeleton-line" style="width:72%"></div></div>
+                        </div>
                     </div>
-                    <div id="bookmarks-list" class="bookmarks-list">
-                        <div class="skeleton-card"><div class="skeleton-line" style="width:30%"></div><div class="skeleton-line" style="width:80%"></div></div>
-                        <div class="skeleton-card"><div class="skeleton-line" style="width:35%"></div><div class="skeleton-line" style="width:70%"></div></div>
-                        <div class="skeleton-card"><div class="skeleton-line" style="width:25%"></div><div class="skeleton-line" style="width:75%"></div></div>
-                        <div class="skeleton-card"><div class="skeleton-line" style="width:40%"></div><div class="skeleton-line" style="width:65%"></div></div>
-                        <div class="skeleton-card"><div class="skeleton-line" style="width:28%"></div><div class="skeleton-line" style="width:72%"></div></div>
+
+                    <!-- 笔记模式内容：中间列表 + 右侧编辑器 -->
+                    <div id="note-view" class="note-view hidden">
+                        <!-- 中间：笔记列表 -->
+                        <div class="note-list-panel">
+                            <div class="note-list-header">
+                                <span id="note-folder-name" class="note-folder-name">笔记目录</span>
+                                <div class="note-list-actions">
+                                    <button id="note-sort-btn" class="note-icon-btn" title="排序">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="9" y2="18"/></svg>
+                                    </button>
+                                    <button id="note-new-btn" class="note-icon-btn note-new-btn" title="新建笔记">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="note-list" class="note-list">
+                                <div class="note-empty-state">
+                                    <p>暂无笔记</p>
+                                    <p class="note-empty-hint">点击右上角 + 新建笔记</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右侧：笔记编辑器 -->
+                        <div class="note-editor-panel">
+                            <div class="note-editor-toolbar">
+                                <div class="toolbar-group">
+                                    <button class="toolbar-btn" title="AI"><span style="color:#3498db;font-weight:bold">AI</span></button>
+                                    <button class="toolbar-btn" title="标签"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></button>
+                                    <button class="toolbar-btn" title="附件"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+                                    <button class="toolbar-btn" title="列表"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                                    <button class="toolbar-btn" title="表格"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg></button>
+                                </div>
+                                <div class="toolbar-divider"></div>
+                                <div class="toolbar-group">
+                                    <select class="toolbar-select" title="字号">
+                                        <option>16</option>
+                                        <option>14</option>
+                                        <option>18</option>
+                                        <option>20</option>
+                                    </select>
+                                    <button class="toolbar-btn" title="加粗"><strong>B</strong></button>
+                                    <button class="toolbar-btn" title="斜体"><em>I</em></button>
+                                    <button class="toolbar-btn" title="下划线"><u>U</u></button>
+                                    <button class="toolbar-btn" title="删除线"><s>S</s></button>
+                                    <button class="toolbar-btn" title="对齐"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
+                                    <button class="toolbar-btn" title="代码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
+                                    <button class="toolbar-btn" title="引用"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></button>
+                                    <button class="toolbar-btn" title="图片"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                                    <button class="toolbar-btn" title="更多"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                                </div>
+                            </div>
+                            <div class="note-editor-content">
+                                <input type="text" id="note-title-input" class="note-title-input" placeholder="无标题">
+                                <div class="note-meta">
+                                    <span id="note-word-count" class="note-word-count">字数:0</span>
+                                    <span id="note-save-status" class="note-save-status"></span>
+                                </div>
+                                <textarea id="note-content-textarea" class="note-content-textarea" placeholder="开始记录..."></textarea>
+                            </div>
+                        </div>
                     </div>
+
                     <!-- 底部版权信息 -->
                     <footer id="main-footer">
                         © 2026 Li Chengyan. All Rights Reserved.
