@@ -1,6 +1,6 @@
 // 当前版本号 - 每次发布时自动更新
 
-const CURRENT_VERSION = 'v3.5.0';
+const CURRENT_VERSION = 'v3.6.0';
 
 
 
