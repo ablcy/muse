@@ -4451,7 +4451,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadSearchHistoryFromCloud();
 
                 // 加载笔记树
-                loadNoteTree();
+                loadNoteTree().then(() => {
+                    renderFolderTree();
+                }).catch(() => {});
 
                 applyLanguage();
 
@@ -5313,9 +5315,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (data.success && data.noteTree) {
+            if (data.success && data.noteTree && data.noteTree.length > 0) {
 
                 noteTree = data.noteTree;
+
+            } else {
+
+                // 服务器无数据时，初始化默认笔记目录
+                if (!noteTree || noteTree.length === 0) {
+                    noteTree = [{
+                        type: 'folder',
+                        name: '笔记目录',
+                        dateAdded: Math.floor(Date.now() / 1000),
+                        children: []
+                    }];
+                }
 
             }
 
@@ -7814,8 +7828,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadSearchHistoryFromCloud();
 
                 // 加载笔记树（云端同步）
-
                 loadNoteTree().then(() => {
+                    // 确保笔记目录存在
+                    if (!noteTree || noteTree.length === 0) {
+                        noteTree = [{
+                            type: 'folder',
+                            name: '笔记目录',
+                            dateAdded: Math.floor(Date.now() / 1000),
+                            children: []
+                        }];
+                    }
+                    renderFolderTree();
+                    // 如果当前在笔记模式，重新选中默认文件夹
+                    if (currentRootMode === 'notes') {
+                        selectDefaultFolder();
+                    }
+                }).catch(() => {
+                    // 加载失败时也确保渲染
                     renderFolderTree();
                 });
 
